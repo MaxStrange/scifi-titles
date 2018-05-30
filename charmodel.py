@@ -45,7 +45,7 @@ def predict(temperature, text, start_index, maxlen, chars, char_indices, model, 
     print('----- Generating with seed: "' + sentence + '"')
     sys.stdout.write(generated)
 
-    for i in range(400):
+    for _ in range(400):
         x_pred = np.zeros((1, maxlen, len(chars)))
         for t, char in enumerate(sentence):
             x_pred[0, t, char_indices[char]] = 1.
@@ -61,11 +61,7 @@ def predict(temperature, text, start_index, maxlen, chars, char_indices, model, 
         sys.stdout.flush()
     print()
 
-
-def train(model_path):
-    """
-    Trains a model and saves it to disk.
-    """
+def setup():
     # Get the text from the the database
     text = '\n'.join([title for title in data.get_titles(limit=1E5)])
 
@@ -75,10 +71,18 @@ def train(model_path):
     # Create two maps: character to index and index to character
     char_indices = dict((c, i) for i, c in enumerate(chars))
     indices_char = dict((i, c) for i, c in enumerate(chars))
-
-    # Cut the text into fixed-length sequences
     maxlen = 40
     step = 3
+
+    return text, chars, char_indices, indices_char, maxlen, step
+
+def train(model_path):
+    """
+    Trains a model and saves it to disk.
+    """
+    text, chars, char_indices, indices_char, maxlen, step = setup()
+
+    # Cut the text into fixed-length sequences
     sentences = []
     next_chars = []
     for i in range(0, len(text) - maxlen, step):
@@ -138,29 +142,12 @@ def use(model_path, temperature):
     # Load the model
     model = load_model(model_path)
 
-    # Get some seed text
-    print('----- temperature:', temperature)
-    generated = ''
-    sentence = text[start_index: start_index + maxlen]
-    generated += sentence
-    print('----- Generating with seed: "' + sentence + '"')
-    sys.stdout.write(generated)
+    # Set up
+    text, chars, char_indices, indices_char, maxlen, _ = setup()
+    start_index = random.randint(0, len(text) - maxlen - 1)
 
-    for i in range(400):
-        x_pred = np.zeros((1, maxlen, len(chars)))
-        for t, char in enumerate(sentence):
-            x_pred[0, t, char_indices[char]] = 1.
-
-        preds = model.predict(x_pred, verbose=0)[0]
-        next_index = sample(preds, temperature)
-        next_char = indices_char[next_index]
-
-        generated += next_char
-        sentence = sentence[1:] + next_char
-
-        sys.stdout.write(next_char)
-        sys.stdout.flush()
-    print()
+    # Predict
+    predict(temperature, text, start_index, maxlen, chars, char_indices, model, indices_char)
 
 if __name__ == "__main__":
     def validate_temperature(t):
