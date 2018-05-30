@@ -165,6 +165,10 @@ if __name__ == "__main__":
     parser.add_argument("--temperature", type=validate_temperature, help="How diverse the output should be > 0")
     args = parser.parse_args()
 
+    if args.model is not None and not os.path.isfile(args.model):
+        print("Model path {} is not a file.".format(args.model))
+        exit(1)
+
     if args.mode == "train":
         train(args.model)
     else:
