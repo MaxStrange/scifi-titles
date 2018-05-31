@@ -29,7 +29,7 @@ high your temperature is.
 
 ## Examples
 
-Here's a few examples after just a few epochs and a temperature of 0.4 (I think the first one is my favorite):
+Here's a few examples after just a few epochs and a temperature of 0.4:
 Note that this list has been curated a bit to remove total nonsense and super repetitive stuff. Also,
 some of these are likely real things that the network hit on on accident or memorized.
 
