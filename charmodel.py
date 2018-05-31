@@ -34,18 +34,20 @@ def sample(preds, temperature=1.0):
     probas = np.random.multinomial(1, preds, 1)
     return np.argmax(probas)
 
-def predict(temperature, text, start_index, maxlen, chars, char_indices, model, indices_char):
+def predict(temperature, text, start_index, maxlen, chars, char_indices, model, indices_char, npreds=400, verbose=True):
     """
     Predict some text from the model.
     """
-    print('----- temperature:', temperature)
+    if verbose:
+        print('----- temperature:', temperature)
     generated = ''
     sentence = text[start_index: start_index + maxlen]
     generated += sentence
-    print('----- Generating with seed: "' + sentence + '"')
-    sys.stdout.write(generated)
+    if verbose:
+        print('----- Generating with seed: "' + sentence + '"')
+        sys.stdout.write(generated)
 
-    for _ in range(400):
+    for _ in range(npreds):
         x_pred = np.zeros((1, maxlen, len(chars)))
         for t, char in enumerate(sentence):
             x_pred[0, t, char_indices[char]] = 1.
@@ -57,9 +59,12 @@ def predict(temperature, text, start_index, maxlen, chars, char_indices, model, 
         generated += next_char
         sentence = sentence[1:] + next_char
 
-        sys.stdout.write(next_char)
-        sys.stdout.flush()
-    print()
+        if verbose:
+            sys.stdout.write(next_char)
+            sys.stdout.flush()
+    if verbose:
+        print()
+    return generated
 
 def setup():
     # Get the text from the the database
@@ -133,36 +138,53 @@ def train(model_path):
     tb_callback = TensorBoard(log_dir="logs/objectid_" + timestr, write_grads=True, write_graph=True, write_images=True)
 
     # Train the model
-    model.fit(x, y, batch_size=128, epochs=60, callbacks=[print_callback, tb_callback])
+    model.fit(x, y, batch_size=128, epochs=5, callbacks=[print_callback, tb_callback])
 
-def use(model_path, temperature):
+def use(model_path, temperature, ntitles):
     """
     Load a model into memory and sample from it.
     """
-    # Load the model
-    model = load_model(model_path)
-
-    # Set up
-    text, chars, char_indices, indices_char, maxlen, _ = setup()
-    start_index = random.randint(0, len(text) - maxlen - 1)
-
     # Predict
-    predict(temperature, text, start_index, maxlen, chars, char_indices, model, indices_char)
+    titles = set()
+    itermax = ntitles  # We will run the network only this many times at most, which should be enough
+    iteration = 0
+    while len(titles) < ntitles and iteration < itermax:
+        print("Getting a batch...")
+        # Load the model - note that it is super inneficient to reload everything every iteration
+        # But I don't have time to do things right
+        model = load_model(model_path)
+
+        # Set up
+        text, chars, char_indices, indices_char, maxlen, _ = setup()
+        start_index = random.randint(0, len(text) - maxlen - 1)
+
+        text = predict(temperature, text, start_index, maxlen, chars, char_indices, model, indices_char, npreds=400, verbose=False)
+        for t in text.split("\n"):
+            titles.add(t.strip())
+        print("Total number of titles generated so far:", len(titles))
+        iteration += 1
+    print("Here are your generated titles:")
+    print("===========================")
+    for i, title in enumerate(titles):
+        if i >= ntitles:
+            break
+        print(title)
 
 if __name__ == "__main__":
     def validate_temperature(t):
         try:
             t = float(t)
-            if t < 0.0:
+            if t <= 0.0:
                 raise argparse.ArgumentTypeError()
             return t
         except:
-            raise argparse.ArgumentTypeError("Temperature must be a number between 0 and 1.")
+            raise argparse.ArgumentTypeError("Temperature must be a positive number.")
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", choices=("train", "use"), default="train", help="train: Train the model; use: Use a trained model")
     parser.add_argument("--model", default=None, help="The name of the model: If we are training, this is where we will save it; if we are using, this is what we will load.")
     parser.add_argument("--temperature", type=validate_temperature, help="How diverse the output should be > 0")
+    parser.add_argument("--n", type=int, default=100, help="The number of titles to generate")
     args = parser.parse_args()
 
     if args.model is not None and not os.path.isfile(args.model):
@@ -172,4 +194,4 @@ if __name__ == "__main__":
     if args.mode == "train":
         train(args.model)
     else:
-        use(args.model, args.temperature)
+        use(args.model, args.temperature, args.n)
