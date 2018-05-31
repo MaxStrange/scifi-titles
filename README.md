@@ -34,7 +34,6 @@ Note that this list has been curated a bit to remove total nonsense and super re
 some of these are likely real things that the network hit on on accident or memorized.
 
 ```
-Leaf Men and the Brave Good Bugs
 The Serving of the Consorger
 The Stars of the Gates
 The Time of the Story
