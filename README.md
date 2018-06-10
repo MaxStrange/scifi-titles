@@ -2,23 +2,11 @@
 Neural Networks to make Scifi Book Titles
 
 ## To Use
-Currently, the data is retrieved pretty manually - as in, you have to do it yourself. If I
-were really putting effort into this, I would write a script that takes the SQL dump from
-the ISFDB website and converts it to CSV or something. Not sure how feasible that is...
-
-Anyway, here's how to use the network:
+The data is contained in the data.csv file, contained in this repo. Here's
+how to use the repo:
 
 1. Clone this repo
-1. Download the data [from the ISFDB website](http://www.isfdb.org/wiki/index.php/ISFDB_Downloads)
-1. Set up MySQL server
-1. Load the data into the MySQL Server
-1. Create a secret.yml file and fill it with:
-    ```yaml
-    password: password
-    user: root
-    ```
-    or whatever.
-1. Train a network with: `python(3) ./charmodel.py --mode train`. You will likely have to up the number of epochs.
+1. Train a network with: `python(3) ./charmodel.py --mode train`. You will likely have to up the number of epochs (it defaults to 5).
 
 Once you have a few models trained (they will be autosaved as you train them), you can use them like so:
 
