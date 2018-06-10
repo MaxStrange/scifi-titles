@@ -81,7 +81,7 @@ def setup():
 
     return text, chars, char_indices, indices_char, maxlen, step
 
-def train(model_path):
+def train(model_path, nepochs):
     """
     Trains a model and saves it to disk.
     """
@@ -138,7 +138,7 @@ def train(model_path):
     tb_callback = TensorBoard(log_dir="logs/objectid_" + timestr, write_grads=True, write_graph=True, write_images=True)
 
     # Train the model
-    model.fit(x, y, batch_size=128, epochs=5, callbacks=[print_callback, tb_callback])
+    model.fit(x, y, batch_size=128, epochs=nepochs, callbacks=[print_callback, tb_callback])
 
 def use(model_path, temperature, ntitles):
     """
@@ -185,6 +185,7 @@ if __name__ == "__main__":
     parser.add_argument("--model", default=None, help="The name of the model: If we are training, this is where we will save it; if we are using, this is what we will load.")
     parser.add_argument("--temperature", type=validate_temperature, help="How diverse the output should be > 0")
     parser.add_argument("--n", type=int, default=100, help="The number of titles to generate")
+    parser.add_argument("--epochs", type=int, default=5, help="The number of times to train on the data")
     args = parser.parse_args()
 
     if args.model is not None and not os.path.isfile(args.model):
@@ -192,6 +193,6 @@ if __name__ == "__main__":
         exit(1)
 
     if args.mode == "train":
-        train(args.model)
+        train(args.model, args.epochs)
     else:
         use(args.model, args.temperature, args.n)
